@@ -1170,17 +1170,17 @@ facade via relative import (`from .recipe import ...`). Adding a pipeline zone l
 import, one registry entry, and the domain's embeddings on the facade (per the manifest header
 annotation).
 
-- [ ] **STEP 0 (DECLARATION)** — declare this is Task 6: implementing `register_hooks` and
+- [x] **STEP 0 (DECLARATION)** — declare this is Task 6: implementing `register_hooks` and
   `autonomy` in `goga_tool_autonomous/registration.py` + the root facade re-exports
-- [ ] **STEP 1 (CONTRACT TESTS)** — create `tests/test_registration.py` with
+- [x] **STEP 1 (CONTRACT TESTS)** — create `tests/test_registration.py` with
   `class TestRegistrationContract:` — import from the root facade
   (`from goga_tool_autonomous import register_hooks, autonomy`); assert the facade `__all__`
   contains `register_hooks`, `autonomy`, `AutonomyRecipe`, `development_recipe`,
   `build_development_contribution`; assert via `inspect.signature`: `register_hooks` has exactly
   one parameter `hooks`; `autonomy` has exactly one parameter named `context` (the offered-name
   injection contract — a different name would silently never receive the view). Run the file —
-  failure is expected at this stage
-- [ ] **STEP 2 (IMPLEMENTATION — REPL cycle)** — open `/opt/goga/project/bin/python -i`; evaluate
+  failure is expected at this stage (observed: ImportError, as designed)
+- [x] **STEP 2 (IMPLEMENTATION — REPL cycle)** — open `/opt/goga/project/bin/python -i`; evaluate
   interactively: a recording stub `_Hooks` capturing `subscribe` calls; a fake context
   (`SimpleNamespace(name="development")` + a contribute recorder) driving `autonomy` end-to-end;
   the registry lookup miss for a non-development name. Verify in the REPL that the delivered
@@ -1196,17 +1196,24 @@ annotation).
   `goga_tool_autonomous/__init__.py` to re-export `register_hooks`, `autonomy` (relative
   `from .registration import …`) and the three embedded names (relative
   `from .recipe import …`) with `__all__` (5 names) and a Google-style module docstring
-- [ ] **STEP 3 (INTERFACE VERIFICATION)** — run
+  (REPL-verified against the real platform: the real `HookRegistrar(tool="autonomous")` accepted
+  exactly one subscription `pipeline/amend_workflow/autonomy` with zero rejections; the real
+  `WorkflowAmendment` view and the fake context both received the seven-stage + `build` document;
+  the miss and display-name paths contributed nothing; `importlib.reload` confirmed)
+- [x] **STEP 3 (INTERFACE VERIFICATION)** — run
   `/opt/goga/project/bin/python -m pytest tests/test_registration.py -v` — all contract tests pass
-- [ ] **STEP 4 (LOGIC TESTS)** — add the six behavioral scenarios below
-- [ ] **STEP 5 (DEBUGGING)** — `/opt/goga/project/bin/python -m pytest tests/ -x`; reproduce any
-  failure in the REPL, fix implementation (never tests), hot-reload, re-run
-- [ ] **STEP 6 (CONTRACT RE-VERIFICATION)** — facade + API shape + behavior; exactly one
+  (3 passed)
+- [x] **STEP 4 (LOGIC TESTS)** — add the six behavioral scenarios below
+- [x] **STEP 5 (DEBUGGING)** — `/opt/goga/project/bin/python -m pytest tests/ -x`; reproduce any
+  failure in the REPL, fix implementation (never tests), hot-reload, re-run (29 passed, nothing
+  to debug)
+- [x] **STEP 6 (CONTRACT RE-VERIFICATION)** — facade + API shape + behavior; exactly one
   `subscribe` call with the address `pipeline`/`amend_workflow` and name `autonomy`; the hook
   reads only `pipeline.name`/`workflow`; no try/except, no state, no file/config reads anywhere
   in the package
-- [ ] **STEP 7 (LINT)** — `ruff check` + `ruff format` — clean
-- [ ] **STEP 8 (COMPLETION)** — mark checkboxes; run the M3 local-commit gate before any commit
+- [x] **STEP 7 (LINT)** — `ruff check` + `ruff format` — clean (17 files already formatted, no
+  edits needed)
+- [x] **STEP 8 (COMPLETION)** — mark checkboxes; run the M3 local-commit gate before any commit
 
 Logic test scenarios (verbatim from the design):
 
