@@ -332,7 +332,7 @@ implementation, same as the CODEMANIFESTs:
   `goga_tool_autonomous`, branch coverage).
 - The `test` extra currently lacks the mandated `goga>=2.0` entry; `[tool.setuptools.package-data]`
   carries a dead `swax = []` entry.
-- The run requires the development venv to live outside the project, at `/opt/project` (it does not
+- The run requires the development venv to live outside the project, at `/opt/goga/project` (it does not
   exist yet — Task 1 creates it).
 - System Python is 3.12.14; the code must stay compatible with Python 3.10+ (ruff enforces
   `target-version = "py310"`).
@@ -375,8 +375,11 @@ implementation, same as the CODEMANIFESTs:
 - `pyproject.toml` is the only configuration surface — no setup.py, no cfg files, no tool side
   config files.
 - Execute all code within a virtualenv — create it if missing. **For this project the venv lives
-  outside the project at `/opt/project`** (run requirement). Every python/pytest/ruff command in
-  this plan runs through `/opt/project/bin/…`.
+  outside the project at `/opt/goga/project`** (run requirement). Every python/pytest/ruff command in
+  this plan runs through `/opt/goga/project/bin/…`.
+  **Environment adaptation (recorded in Task 1)**: the container's `/opt` is root-owned and
+  unwritable (no sudo/su/caps), so the mandated `/opt/project` cannot be created; the venv lives at
+  `/opt/goga/project` instead — still outside the project, satisfying the run requirement's intent.
 - Imports: relative imports for all intra-package references (`from .recipe import …`,
   `from ..utils import helper`); absolute imports only for stdlib and third-party (e.g.
   `from goga.pipeline.workflow import …`). An absolute import of this package's own modules inside
@@ -446,15 +449,21 @@ implementation, same as the CODEMANIFESTs:
 - Task gate (every task, every stage): `ruff check goga_tool_autonomous/ tests/` must exit 0, and
   `ruff format goga_tool_autonomous/ tests/` must be applied (no diff left unformatted) before a
   task is complete. Lint covers test code equally.
+  **Environment adaptation (recorded in Task 1)**: the installed ruff (0.16.9) also formats Python
+  code blocks inside Markdown, so the bare `ruff format` / `ruff format --check` commands rewrite
+  the read-only `.usages/` contract files (M5 violation) and `--check` exits 1 on them. Both
+  formatter commands therefore run with `--exclude '.usages'` (a CLI scope choice, not a config
+  relaxation: `ignore = []` and the formatter config stay untouched).
 - Complexity gate: ruff's mccabe check enforces max function complexity 10 — decompose rather than
   suppress.
 - **Local commit gate (mandatory)**: before every local `git commit`, the full gate must pass in
-  the `/opt/project` venv, in this exact order:
-  1. `/opt/project/bin/python -c "import goga_tool_autonomous"` (facade import — a broken import
+  the `/opt/goga/project` venv, in this exact order:
+  1. `/opt/goga/project/bin/python -c "import goga_tool_autonomous"` (facade import — a broken import
      is fatal to every goga command),
-  2. `/opt/project/bin/ruff check goga_tool_autonomous/ tests/` (exit 0),
-  3. `/opt/project/bin/ruff format --check goga_tool_autonomous/ tests/` (exit 0),
-  4. `/opt/project/bin/python -m pytest tests/ -x` (all green).
+  2. `/opt/goga/project/bin/ruff check goga_tool_autonomous/ tests/` (exit 0),
+  3. `/opt/goga/project/bin/ruff format --check --exclude '.usages' goga_tool_autonomous/ tests/`
+     (exit 0),
+  4. `/opt/goga/project/bin/python -m pytest tests/ -x` (all green).
   A commit made with a failing gate violates this plan. If the gate fails, fix the implementation
   code — never weaken the tests, never widen `ignore = []`, never relax the formatter config.
 - `CODEMANIFEST` and `.usages/` files are never touched by lint fixes or any other edit.
@@ -464,7 +473,7 @@ implementation, same as the CODEMANIFESTs:
 Development of every entity proceeds through interactive evaluation cycles in the project venv
 interpreter — not blind write-then-run:
 
-1. **Open a REPL** — `/opt/project/bin/python -i` (the `/opt/project` venv); import the module
+1. **Open a REPL** — `/opt/goga/project/bin/python -i` (the `/opt/goga/project` venv); import the module
    under development and the real platform APIs (`goga.pipeline.workflow`,
    `goga.pipeline.compiler`, the parsed reference workflow).
 2. **Evaluate continuously** — exercise the entity's behavior interactively against the real
@@ -507,7 +516,7 @@ expectation pinning, STEP 2 implementation, STEP 5 debugging) as explicit checkb
 
 ### Task 1: Development environment, package skeleton, and test scaffolding (infrastructure)
 
-This task prepares everything the later TDD tasks build on: the `/opt/project` venv (outside the
+This task prepares everything the later TDD tasks build on: the `/opt/goga/project` venv (outside the
 project — run requirement; conventions: create if missing), the `pyproject.toml` fixes mandated by
 `goga_dependency`, the package directory skeleton with docstring-only `__init__.py` files (so the
 editable install exposes the full package tree and the facade imports cleanly from the start), and
@@ -525,24 +534,28 @@ is implemented here.
 implementation does not match the contract, fix the implementation — never fix the contract. The
 `.usages/` files are equally read-only.**
 
-- [ ] Create the venv outside the project: `python3 -m venv /opt/project` (skip creation if it
-  already exists; conventions: create if missing)
-- [ ] Update `pyproject.toml`: add `"goga>=2.0"` to `[project.optional-dependencies].test` (no
+- [x] Create the venv outside the project: `python3 -m venv /opt/goga/project` (skip creation if it
+  already exists; conventions: create if missing) — **adapted**: `/opt` is root-owned and unwritable
+  in this container (no sudo/su/caps/docker), so the mandated `/opt/project` cannot exist; the venv
+  was created at `/opt/goga/project` (goga-owned, still outside the project) and every plan path
+  was adapted accordingly (Task 1, recorded here once)
+- [x] Update `pyproject.toml`: add `"goga>=2.0"` to `[project.optional-dependencies].test` (no
   upper bound, per `goga_dependency`); keep `dependencies = []` untouched; remove the dead
   `[tool.setuptools.package-data]` `swax = []` entry
-- [ ] Install the package editable with the test extra, from the project root:
-  `/opt/project/bin/pip install -e '.[test]'` — then verify the toolchain:
-  `/opt/project/bin/python -m pytest --version` and `/opt/project/bin/ruff --version` and
-  `/opt/project/bin/python -c "import goga; print('platform present')"`
-- [ ] Create the package skeleton (docstring-only `__init__.py` per package — one-line Google-style
+- [x] Install the package editable with the test extra, from the project root:
+  `/opt/goga/project/bin/pip install -e '.[test]'` — then verify the toolchain:
+  `/opt/goga/project/bin/python -m pytest --version` and `/opt/goga/project/bin/ruff --version` and
+  `/opt/goga/project/bin/python -c "import goga; print('platform present')"`
+  (installed: pytest 9.1.1, ruff 0.16.9, goga 2.0.1 from PyPI — the unpinned test-extra platform)
+- [x] Create the package skeleton (docstring-only `__init__.py` per package — one-line Google-style
   module docstring; no re-exports yet, they come with each cell's coding task):
   `goga_tool_autonomous/recipe/__init__.py`, `goga_tool_autonomous/recipe/model/__init__.py`,
   `goga_tool_autonomous/recipe/development/__init__.py`; replace the empty
   `goga_tool_autonomous/__init__.py` with the same docstring-only form
-- [ ] Create the test tree with `__init__.py` in every directory: `tests/__init__.py`,
+- [x] Create the test tree with `__init__.py` in every directory: `tests/__init__.py`,
   `tests/recipe/__init__.py`, `tests/recipe/model/__init__.py`,
   `tests/recipe/development/__init__.py`
-- [ ] Create `tests/conftest.py` with the two shared fixtures exactly as designed (imports:
+- [x] Create `tests/conftest.py` with the two shared fixtures exactly as designed (imports:
   `importlib.resources`, `pathlib.Path`, `goga.pipeline.workflow.parse_workflow`):
   - `development_pipeline_path` — the real installed pipeline file, located via
     `importlib.resources.files("goga") / "assets" / "pipelines" / "development.yml"` (a platform
@@ -551,13 +564,15 @@ implementation does not match the contract, fix the implementation — never fix
   - `reference_workflow` — session-scoped, read-only:
     `parse_workflow(Path(__file__).resolve().parents[1] / ".goga" / "workflows" / "development.yml")`
     (for `tests/conftest.py`, `parents[1]` is the project root)
-- [ ] Verify facade import-cleanliness: `/opt/project/bin/python -c "import goga_tool_autonomous"`
+- [x] Verify facade import-cleanliness: `/opt/goga/project/bin/python -c "import goga_tool_autonomous"`
   (exit 0 — a broken facade import is fatal to every goga command)
-- [ ] Verify test collection: `/opt/project/bin/python -m pytest tests/` — reports "no tests ran"
+- [x] Verify test collection: `/opt/goga/project/bin/python -m pytest tests/` — reports "no tests ran"
   (exit code 5 is expected and acceptable at this stage; there must be no collection errors)
-- [ ] Lint + format: `/opt/project/bin/ruff check goga_tool_autonomous/ tests/` and
-  `/opt/project/bin/ruff format goga_tool_autonomous/ tests/` — both clean
-- [ ] Verify the contracts are untouched: `goga lint` still reports `cells: 4 errors: 0`
+- [x] Lint + format: `/opt/goga/project/bin/ruff check goga_tool_autonomous/ tests/` and
+  `/opt/goga/project/bin/ruff format goga_tool_autonomous/ tests/` — both clean — **adapted**: both
+  formatter commands run with `--exclude '.usages'` (see the M3 note) so the read-only `.usages/`
+  files stay untouched; `ruff check` passes without exclusion
+- [x] Verify the contracts are untouched: `goga lint` still reports `cells: 4 errors: 0`
 
 ### Task 2: `AutonomyRecipe` — the recipe shape cell (TDD coding)
 
@@ -610,9 +625,9 @@ duplicates in the stages map and an overlap contributes both instructions for th
   keyword-only parameters `pipeline`, `gated_stages`, `accept_stage`, `build_extend`, no defaults,
   annotations `str`, `list[str]`, `str`, `dict[str, str | list[str]]`; assert each property is
   readable on a constructed instance. Run
-  `/opt/project/bin/python -m pytest tests/recipe/model/test_recipe.py -v` — failure at this stage
+  `/opt/goga/project/bin/python -m pytest tests/recipe/model/test_recipe.py -v` — failure at this stage
   is expected (the entity does not exist yet)
-- [ ] **STEP 2 (IMPLEMENTATION — REPL cycle)** — open `/opt/project/bin/python -i`; evaluate the
+- [ ] **STEP 2 (IMPLEMENTATION — REPL cycle)** — open `/opt/goga/project/bin/python -i`; evaluate the
   designed form interactively: construct with the four keyword arguments; verify property reads
   return each value verbatim; verify `dataclasses.FrozenInstanceError` on field assignment;
   verify equality semantics of equal instances. After each edit of
@@ -623,18 +638,18 @@ duplicates in the stages map and an overlap contributes both instructions for th
   `goga_tool_autonomous/recipe/model/__init__.py`: `from .recipe import AutonomyRecipe` with
   `__all__ = ["AutonomyRecipe"]` and a Google-style module docstring
 - [ ] **STEP 3 (INTERFACE VERIFICATION)** — run
-  `/opt/project/bin/python -m pytest tests/recipe/model/test_recipe.py -v` — all contract tests
+  `/opt/goga/project/bin/python -m pytest tests/recipe/model/test_recipe.py -v` — all contract tests
   pass
 - [ ] **STEP 4 (LOGIC TESTS)** — add the three behavioral scenarios below to
   `tests/recipe/model/test_recipe.py` (positive + edge; names per M2)
-- [ ] **STEP 5 (DEBUGGING)** — run `/opt/project/bin/python -m pytest tests/ -x`; for any failure,
+- [ ] **STEP 5 (DEBUGGING)** — run `/opt/goga/project/bin/python -m pytest tests/ -x`; for any failure,
   reproduce it in the REPL, fix the implementation code (never the test code), hot-reload,
   re-run — until all tests pass
 - [ ] **STEP 6 (CONTRACT RE-VERIFICATION)** — facade, API shape, and behavior still match the
-  contract: `/opt/project/bin/python -c "from goga_tool_autonomous.recipe.model import
+  contract: `/opt/goga/project/bin/python -c "from goga_tool_autonomous.recipe.model import
   AutonomyRecipe"` exits 0; the four properties are read-only; no methods were added
-- [ ] **STEP 7 (LINT)** — `/opt/project/bin/ruff check goga_tool_autonomous/ tests/` (exit 0) and
-  `/opt/project/bin/ruff format goga_tool_autonomous/ tests/`; decompose if complexity or style
+- [ ] **STEP 7 (LINT)** — `/opt/goga/project/bin/ruff check goga_tool_autonomous/ tests/` (exit 0) and
+  `/opt/goga/project/bin/ruff format goga_tool_autonomous/ tests/`; decompose if complexity or style
   requires it
 - [ ] **STEP 8 (COMPLETION)** — mark the checkboxes; run the M3 local-commit gate
   (facade import → ruff check → ruff format --check → `pytest tests/ -x`) before any commit
@@ -731,7 +746,7 @@ Verified code stack trace (from the design):
   (`from goga_tool_autonomous.recipe.development import development_recipe`); assert
   `development_recipe` is in the facade `__all__`; assert via `inspect.signature`: zero
   parameters, return annotation `AutonomyRecipe`. Run the file — failure is expected at this stage
-- [ ] **STEP 2 (IMPLEMENTATION — REPL cycle)** — open `/opt/project/bin/python -i`; first pin the
+- [ ] **STEP 2 (IMPLEMENTATION — REPL cycle)** — open `/opt/goga/project/bin/python -i`; first pin the
   expectations against the real reference: `parse_workflow` the repo
   `.goga/workflows/development.yml`, list the stages whose entry carries `approve == "auto"`,
   read `extend["build"]` (after/title/timeout/script/after_script) — these observed values are the
@@ -742,14 +757,14 @@ Verified code stack trace (from the design):
   (`from .entry import development_recipe`, `__all__ = ["development_recipe"]` — extended in
   Task 4)
 - [ ] **STEP 3 (INTERFACE VERIFICATION)** — run
-  `/opt/project/bin/python -m pytest tests/recipe/development/test_entry.py -v` — all contract
+  `/opt/goga/project/bin/python -m pytest tests/recipe/development/test_entry.py -v` — all contract
   tests pass
 - [ ] **STEP 4 (LOGIC TESTS)** — add the two behavioral scenarios below (the mirroring test uses
   the shared `reference_workflow` fixture from `tests/conftest.py`)
-- [ ] **STEP 5 (DEBUGGING)** — `/opt/project/bin/python -m pytest tests/ -x`; reproduce any
+- [ ] **STEP 5 (DEBUGGING)** — `/opt/goga/project/bin/python -m pytest tests/ -x`; reproduce any
   failure in the REPL, fix implementation (never tests), hot-reload, re-run
 - [ ] **STEP 6 (CONTRACT RE-VERIFICATION)** — facade + API shape + behavior;
-  `/opt/project/bin/python -c "from goga_tool_autonomous.recipe.development import
+  `/opt/goga/project/bin/python -c "from goga_tool_autonomous.recipe.development import
   development_recipe"` exits 0; the routine performs no action beyond construction
 - [ ] **STEP 7 (LINT)** — `ruff check` + `ruff format` over `goga_tool_autonomous/ tests/` — clean
 - [ ] **STEP 8 (COMPLETION)** — mark checkboxes; run the M3 local-commit gate before any commit
@@ -868,7 +883,7 @@ Verified code stack trace checkpoints (from the design — each must hold in the
   it is in the facade `__all__`; assert via `inspect.signature`: parameters `recipe` (annotation
   `AutonomyRecipe`) and `workflow` (annotation `WorkflowDocument | None`), return annotation
   `WorkflowDocument`. Run the file — failure is expected at this stage
-- [ ] **STEP 2 (IMPLEMENTATION — REPL cycle)** — open `/opt/project/bin/python -i`; evaluate each
+- [ ] **STEP 2 (IMPLEMENTATION — REPL cycle)** — open `/opt/goga/project/bin/python -i`; evaluate each
   algorithm step against the real platform models before writing the file: construct
   `WorkflowExtendStage(after=["commit-changes"], body={...})` and inspect its fields; construct
   `WorkflowStage(approve="auto")` / `WorkflowStage(manual=False)` and inspect; build a
@@ -880,11 +895,11 @@ Verified code stack trace checkpoints (from the design — each must hold in the
   add the re-export to `goga_tool_autonomous/recipe/development/__init__.py`
   (`__all__ = ["development_recipe", "build_development_contribution"]`)
 - [ ] **STEP 3 (INTERFACE VERIFICATION)** — run
-  `/opt/project/bin/python -m pytest tests/recipe/development/test_contribution.py -v` — all
+  `/opt/goga/project/bin/python -m pytest tests/recipe/development/test_contribution.py -v` — all
   contract tests pass
 - [ ] **STEP 4 (LOGIC TESTS)** — add the seven behavioral scenarios below (positive, negative,
   edge)
-- [ ] **STEP 5 (DEBUGGING)** — `/opt/project/bin/python -m pytest tests/ -x`; reproduce any
+- [ ] **STEP 5 (DEBUGGING)** — `/opt/goga/project/bin/python -m pytest tests/ -x`; reproduce any
   failure in the REPL (same interpreter session pattern), fix implementation (never tests),
   hot-reload, re-run
 - [ ] **STEP 6 (CONTRACT RE-VERIFICATION)** — facade + API shape + behavior; the algorithm's four
@@ -1048,13 +1063,13 @@ implementation does not match the contract, fix the implementation — never fix
   `__all__ = ["AutonomyRecipe", "development_recipe", "build_development_contribution"]`;
   Google-style module docstring (the recipe zone facade — the single contract surface of the zone)
 - [ ] Verify facade accessibility (per the conventions' facade-check form):
-  `/opt/project/bin/python -c "from goga_tool_autonomous.recipe import AutonomyRecipe,
+  `/opt/goga/project/bin/python -c "from goga_tool_autonomous.recipe import AutonomyRecipe,
   development_recipe, build_development_contribution"` — exit 0
-- [ ] Verify the whole suite still passes: `/opt/project/bin/python -m pytest tests/ -x`
-- [ ] Verify the root facade import stays clean: `/opt/project/bin/python -c "import
+- [ ] Verify the whole suite still passes: `/opt/goga/project/bin/python -m pytest tests/ -x`
+- [ ] Verify the root facade import stays clean: `/opt/goga/project/bin/python -c "import
   goga_tool_autonomous"` — exit 0
-- [ ] Lint: `/opt/project/bin/ruff check goga_tool_autonomous/ tests/` and
-  `/opt/project/bin/ruff format goga_tool_autonomous/ tests/` — clean
+- [ ] Lint: `/opt/goga/project/bin/ruff check goga_tool_autonomous/ tests/` and
+  `/opt/goga/project/bin/ruff format goga_tool_autonomous/ tests/` — clean
 
 ### Task 6: `register_hooks` and `autonomy` — the package facade (TDD coding)
 
@@ -1153,7 +1168,7 @@ annotation).
   one parameter `hooks`; `autonomy` has exactly one parameter named `context` (the offered-name
   injection contract — a different name would silently never receive the view). Run the file —
   failure is expected at this stage
-- [ ] **STEP 2 (IMPLEMENTATION — REPL cycle)** — open `/opt/project/bin/python -i`; evaluate
+- [ ] **STEP 2 (IMPLEMENTATION — REPL cycle)** — open `/opt/goga/project/bin/python -i`; evaluate
   interactively: a recording stub `_Hooks` capturing `subscribe` calls; a fake context
   (`SimpleNamespace(name="development")` + a contribute recorder) driving `autonomy` end-to-end;
   the registry lookup miss for a non-development name. Verify in the REPL that the delivered
@@ -1170,9 +1185,9 @@ annotation).
   `from .registration import …`) and the three embedded names (relative
   `from .recipe import …`) with `__all__` (5 names) and a Google-style module docstring
 - [ ] **STEP 3 (INTERFACE VERIFICATION)** — run
-  `/opt/project/bin/python -m pytest tests/test_registration.py -v` — all contract tests pass
+  `/opt/goga/project/bin/python -m pytest tests/test_registration.py -v` — all contract tests pass
 - [ ] **STEP 4 (LOGIC TESTS)** — add the six behavioral scenarios below
-- [ ] **STEP 5 (DEBUGGING)** — `/opt/project/bin/python -m pytest tests/ -x`; reproduce any
+- [ ] **STEP 5 (DEBUGGING)** — `/opt/goga/project/bin/python -m pytest tests/ -x`; reproduce any
   failure in the REPL, fix implementation (never tests), hot-reload, re-run
 - [ ] **STEP 6 (CONTRACT RE-VERIFICATION)** — facade + API shape + behavior; exactly one
   `subscribe` call with the address `pipeline`/`amend_workflow` and name `autonomy`; the hook
@@ -1332,20 +1347,20 @@ implementation does not match the contract, fix the implementation — never fix
   - Sufficiency: the neutrality property — authored intent wins per slot with zero byte drift;
     guards the "do not implement merge or override logic" constraint from the platform side
 - [ ] REPL-verify the expected compiled values before pinning them: drive
-  `merge_workflow_overlay` + `compile_flow` in `/opt/project/bin/python -i` once, confirm the
+  `merge_workflow_overlay` + `compile_flow` in `/opt/goga/project/bin/python -i` once, confirm the
   stage order and the build fields, then migrate the verified expectations into the test (M4)
-- [ ] Run validation: `/opt/project/bin/python -m pytest tests/ -x` — the full suite (20
+- [ ] Run validation: `/opt/goga/project/bin/python -m pytest tests/ -x` — the full suite (20
   scenarios) is green
 - [ ] Final acceptance checks (carried over from the apply-architecture stage): facade import
-  check (`/opt/project/bin/python -c "import goga_tool_autonomous"`); full facade surface check
-  (`/opt/project/bin/python -c "from goga_tool_autonomous import register_hooks, autonomy,
+  check (`/opt/goga/project/bin/python -c "import goga_tool_autonomous"`); full facade surface check
+  (`/opt/goga/project/bin/python -c "from goga_tool_autonomous import register_hooks, autonomy,
   AutonomyRecipe, development_recipe, build_development_contribution"`); zone facade check
-  (`/opt/project/bin/python -c "from goga_tool_autonomous.recipe import AutonomyRecipe,
+  (`/opt/goga/project/bin/python -c "from goga_tool_autonomous.recipe import AutonomyRecipe,
   development_recipe, build_development_contribution"`); `test_entry_mirrors_reference_workflow`
   passes; contribution determinism passes; hook silence for non-`development` pipelines passes;
   the `goga>=2.0` test-extra entry is present in `pyproject.toml`
-- [ ] Lint + format: `/opt/project/bin/ruff check goga_tool_autonomous/ tests/` and
-  `/opt/project/bin/ruff format goga_tool_autonomous/ tests/` — clean
+- [ ] Lint + format: `/opt/goga/project/bin/ruff check goga_tool_autonomous/ tests/` and
+  `/opt/goga/project/bin/ruff format goga_tool_autonomous/ tests/` — clean
 - [ ] Verify the contracts are untouched: `goga lint` still reports `cells: 4 errors: 0`; the
   four CODEMANIFESTs and all `.usages/` files are unmodified (diff against the pre-task state)
 
@@ -1353,14 +1368,14 @@ implementation does not match the contract, fix the implementation — never fix
 
 ## Validation Commands
 
-- `/opt/project/bin/python -m pytest tests/ -x`: Run all tests (the full 20-scenario suite)
-- `/opt/project/bin/python -m pytest tests/<path>/test_<name>.py -v`: Run a specific test file
-- `/opt/project/bin/ruff check goga_tool_autonomous/ tests/`: Lint check (source and tests — exit 0)
-- `/opt/project/bin/ruff format --check goga_tool_autonomous/ tests/`: Formatter check (exit 0)
-- `/opt/project/bin/python -c "import goga_tool_autonomous"`: Facade import-cleanliness (a broken
+- `/opt/goga/project/bin/python -m pytest tests/ -x`: Run all tests (the full 20-scenario suite)
+- `/opt/goga/project/bin/python -m pytest tests/<path>/test_<name>.py -v`: Run a specific test file
+- `/opt/goga/project/bin/ruff check goga_tool_autonomous/ tests/`: Lint check (source and tests — exit 0)
+- `/opt/goga/project/bin/ruff format --check goga_tool_autonomous/ tests/`: Formatter check (exit 0)
+- `/opt/goga/project/bin/python -c "import goga_tool_autonomous"`: Facade import-cleanliness (a broken
   import is fatal to every goga command)
-- `/opt/project/bin/python -c "from goga_tool_autonomous import register_hooks, autonomy, AutonomyRecipe, development_recipe, build_development_contribution"`: Verify that all facade entities (2 declared + 3 embedded) are importable
-- `/opt/project/bin/python -c "from goga_tool_autonomous.recipe import AutonomyRecipe, development_recipe, build_development_contribution"`: Verify the recipe zone facade embeddings
+- `/opt/goga/project/bin/python -c "from goga_tool_autonomous import register_hooks, autonomy, AutonomyRecipe, development_recipe, build_development_contribution"`: Verify that all facade entities (2 declared + 3 embedded) are importable
+- `/opt/goga/project/bin/python -c "from goga_tool_autonomous.recipe import AutonomyRecipe, development_recipe, build_development_contribution"`: Verify the recipe zone facade embeddings
 - `goga lint`: Verify the cells — must stay `cells: 4 errors: 0` (CODEMANIFESTs untouched)
 
 ---
@@ -1396,5 +1411,5 @@ implementation does not match the contract, fix the implementation — never fix
   naming, classification, mock policy), M3 linter/formatter gate at every task **and before every
   local commit**, M4 REPL-cycle workflow (continuous interactive evaluation, hot reloading,
   migration of verified code to source files), M5 contract immutability
-- [ ] The venv lives outside the project at `/opt/project`; runtime `dependencies = []` is
+- [ ] The venv lives outside the project at `/opt/goga/project`; runtime `dependencies = []` is
   untouched; `goga>=2.0` is present in the `test` extra
