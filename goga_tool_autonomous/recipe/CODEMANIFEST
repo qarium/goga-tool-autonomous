@@ -1,0 +1,37 @@
+Imports:
+  - Types:
+      - AutonomyRecipe
+    Usages:
+      - recipe
+    From: goga_tool_autonomous/recipe/model
+  - Types:
+      - development_recipe
+      - build_development_contribution
+    Usages:
+      - contribution
+    From: goga_tool_autonomous/recipe/development
+
+Usages:
+  conventions: .goga/usages/conventions.md
+
+Annotations: |
+  Use `conventions` for code writing rules and testing.
+
+  This cell is the recipe zone facade: the single contract surface of the zone — the recipe
+  shape and every pipeline domain's entry and delivery, re-exported from the sub-cells.
+  Use `recipe` and `contribution` from Imports for the re-exported sub-cell APIs.
+
+---
+
+->AutonomyRecipe: {}
+
+->development_recipe: {}
+->build_development_contribution: {}
+
+---
+
+Author: Goga
+CreatedAt: 01/10/26
+Description: |
+  The recipe zone facade: aggregates the zone's sub-cells — the recipe shape and the pipeline
+  domain entries and deliveries — into one contract surface with functional-domain usage files.
