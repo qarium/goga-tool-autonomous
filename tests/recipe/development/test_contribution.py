@@ -4,6 +4,7 @@ import copy
 import inspect
 
 import goga_tool_autonomous.recipe.development as development_facade
+import pytest
 from goga.pipeline.workflow import WorkflowDocument, WorkflowStage
 from goga_tool_autonomous.recipe.development import build_development_contribution, development_recipe
 from goga_tool_autonomous.recipe.model import AutonomyRecipe
@@ -148,3 +149,10 @@ class TestBuildDevelopmentContributionBehavior:
         assert document.stages["code-design"].approve == "auto"
         assert document.stages["accept-result"].manual is False
         assert document.stages["accept-result"].approve is None
+
+    def test_contribution_recipe_without_after_key_raises_key_error(self):
+        """A hand-built recipe lacking the after positioning key fails with a propagated KeyError."""
+        recipe = AutonomyRecipe(pipeline="p", gated_stages=[], accept_stage="a", build_extend={"title": "T"})
+
+        with pytest.raises(KeyError):
+            build_development_contribution(recipe=recipe, workflow=None)

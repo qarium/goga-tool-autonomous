@@ -17,4 +17,6 @@ jobs:
       - uses: astral-sh/ruff-action@v3
 
       - name: Check formatting
-        run: ruff format --check goga_tool_autonomous/ tests/
+        # .usages/ holds read-only contract docs with embedded Python blocks that
+        # ruff (>=0.16) would rewrite; excluded via CLI, the same scope the plan records.
+        run: ruff format --check --exclude '.usages' goga_tool_autonomous/ tests/

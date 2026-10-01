@@ -1,9 +1,11 @@
 """Integration tests: the contribution against the real platform merge and compiler."""
 
 import yaml
+from goga.hooks.tools.registration import HookRegistrar
 from goga.pipeline.compiler import compile_flow
+from goga.pipeline.hooks import PipelineHooks, PipelineIdentity, WorkflowDecision, WorkIdentity
 from goga.pipeline.hooks.overlay import ToolContribution, merge_workflow_overlay
-from goga_tool_autonomous import build_development_contribution, development_recipe
+from goga_tool_autonomous import autonomy, build_development_contribution, development_recipe, register_hooks
 
 
 class TestPlatformIntegration:
@@ -49,3 +51,59 @@ class TestPlatformIntegration:
 
         assert (tmp_path / "authored.yml").read_text() == (tmp_path / "merged.yml").read_text()
         assert overlay.provenance == ["autonomous"]
+
+    def test_integration_registration_accepted_by_real_registrar(self):
+        """register_hooks registers exactly one valid subscription on the real platform registrar."""
+        registrar = HookRegistrar(tool="autonomous")
+
+        register_hooks(registrar)
+
+        assert len(registrar.subscriptions) == 1
+
+        subscription = registrar.subscriptions[0]
+
+        assert (subscription.domain, subscription.action, subscription.name) == (
+            "pipeline",
+            "amend_workflow",
+            "autonomy",
+        )
+        assert subscription.hook is autonomy
+        assert registrar.rejections == []
+
+    def test_integration_amendment_delivery_contributes_for_development(self):
+        """The real amendment delivery commits the autonomy contribution for a development composition."""
+        hooks = PipelineHooks()
+
+        overlay = hooks.amend_workflow(
+            pipeline=PipelineIdentity(
+                name="development",
+                display_name="Development",
+                description="The development pipeline",
+                source="project",
+            ),
+            decision=WorkflowDecision(kind="disabled", workflow_name=None),
+            workflow=None,
+            work=WorkIdentity(branch="the-first-version"),
+        )
+
+        assert overlay.provenance == ["autonomous"]
+
+        gated = [name for name in overlay.workflow.stages if name != "accept-result"]
+
+        assert all(overlay.workflow.stages[name].approve == "auto" for name in gated)
+        assert overlay.workflow.stages["accept-result"].manual is False
+        assert overlay.workflow.extend.keys() == {"build"}
+
+    def test_integration_amendment_delivery_silent_for_other_pipeline(self):
+        """The real amendment delivery stays neutral for a non-development composition."""
+        hooks = PipelineHooks()
+
+        overlay = hooks.amend_workflow(
+            pipeline=PipelineIdentity(name="review", display_name="", description="", source="project"),
+            decision=WorkflowDecision(kind="disabled", workflow_name=None),
+            workflow=None,
+            work=WorkIdentity(branch="the-first-version"),
+        )
+
+        assert overlay.provenance == []
+        assert overlay.workflow is None

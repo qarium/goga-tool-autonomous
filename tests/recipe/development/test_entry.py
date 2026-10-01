@@ -52,7 +52,13 @@ class TestDevelopmentRecipeBehavior:
             "after_script": "rm -rf .ralphex",
         }
 
-        assert reference_workflow.extend["build"].after == entry.build_extend["after"]
+        reference_build = reference_workflow.extend["build"]
+
+        assert entry.build_extend == {"after": reference_build.after, **reference_build.body}
+
+        authored_manual = [s for s in reference_workflow.stages if reference_workflow.stages[s].manual is False]
+
+        assert authored_manual == [entry.accept_stage]
 
     def test_entry_deterministic(self):
         """Every call returns an equal entry built from fresh mutable containers."""
@@ -62,3 +68,4 @@ class TestDevelopmentRecipeBehavior:
         assert first == second
         assert first is not second
         assert first.gated_stages is not second.gated_stages
+        assert first.build_extend is not second.build_extend
