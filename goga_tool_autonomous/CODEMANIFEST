@@ -1,0 +1,98 @@
+Imports:
+  - Types:
+      - AutonomyRecipe
+      - development_recipe
+      - build_development_contribution
+    Usages:
+      - development
+    From: goga_tool_autonomous/recipe
+
+Usages:
+  conventions: .goga/usages/conventions.md
+  workflow_document: .goga/usages/github/goga/pipeline/workflow/parse-workflow.md
+  hooks_registration: .goga/usages/github/goga/hooks/registering-hooks.md
+  pipeline_amendment: .goga/usages/github/goga/pipeline/registering-hooks.md
+  goga_dependency: .goga/usages/cooks/goga-dependency.md
+
+Annotations: |
+  Use `conventions` for code writing rules and testing.
+
+  This cell is the package facade: the single API surface of the tool and its goga-platform
+  subscription entry. The facade module must stay import-clean — a broken import is fatal to
+  every goga command.
+
+  The package runs inside a goga-provided interpreter: per `goga_dependency`, the runtime
+  dependencies stay empty — goga is provided by the ecosystem and is declared only in the test
+  extra, unpinned above the supported line.
+  The subscription maps each exact pipeline name to its functional domain of the recipe zone:
+  the development pipeline is served by the `development` domain from Imports — the
+  `development_recipe` entry and the `build_development_contribution` delivery; a new pipeline
+  zone adds its domain imports, one registry entry, and the domain's embeddings here — the
+  facade declares no new types for it.
+
+  Use `hooks_registration` for the facade and subscription contract.
+  Use `pipeline_amendment` for the amendment view semantics the hook consumes.
+
+---
+
+"register_hooks(hooks: Hooks)":
+  location: registration.py
+  annotations: |
+    Subscribe the single autonomy hook to the pipeline workflow-amendment action.
+
+    `hooks`: the goga subscription surface delivered at registration — exposes
+    subscribe(domain, action, name, hook) per `hooks_registration`
+
+    Algorithm:
+    1. Subscribe the hook routine `autonomy` under domain pipeline, action amend_workflow,
+       hook name autonomy — exactly one subscription, unconditional
+
+    Requirements:
+    - The facade imports cleanly at all times — an import failure stops every goga command
+    - No other facades exist: no CLI entry, no install lifecycle
+
+    Constraints:
+    - Never subscribe any other address or hook name
+    - No configuration or file reads during registration
+
+"autonomy(context: WorkflowAmendment)":
+  location: registration.py
+  annotations: |
+    The amendment hook — deliver the autonomy contribution for the composing pipeline.
+
+    `context`: the per-tool amendment view delivered by the platform
+
+    Algorithm:
+    1. Resolve the functional domain for the exact pipeline name of `context` — the
+       development pipeline maps to the `development` domain from Imports; a miss returns
+       silently
+    2. Build the contribution document with the delivery of the resolved domain —
+       `build_development_contribution` applied to the domain entry `development_recipe` —
+       and the authored workflow of `context` (a `workflow_document`, or none when
+       unresolved)
+    3. Contribute the document through `context`
+
+    Requirements:
+    - A pure function of the delivered facts — identical facts produce the identical
+      contribution
+    - Read only the pipeline identity and the authored workflow from the view
+
+    Constraints:
+    - No state, no cache, no internal exception handling — failures propagate as clean
+      command errors through the hard action
+    - No project-file or configuration reads; contribute nothing beyond the built document
+
+->AutonomyRecipe: {}
+
+->development_recipe: {}
+
+->build_development_contribution: {}
+
+---
+
+Author: Goga
+CreatedAt: 01/10/26
+Description: |
+  The goga-tool-autonomous package facade: the platform subscription (one hook on the pipeline
+  workflow-amendment action) and the re-exported recipe-zone API, mapping each exact pipeline
+  name to its functional domain.

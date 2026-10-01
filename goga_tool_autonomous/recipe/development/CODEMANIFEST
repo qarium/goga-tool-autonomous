@@ -1,0 +1,92 @@
+Imports:
+  - Types:
+      - AutonomyRecipe
+    Usages:
+      - recipe AS recipe_guide
+    From: goga_tool_autonomous/recipe/model
+
+Usages:
+  conventions: .goga/usages/conventions.md
+  workflow_document: .goga/usages/github/goga/pipeline/workflow/parse-workflow.md
+  goga_dependency: .goga/usages/cooks/goga-dependency.md
+
+Annotations: |
+  Use `conventions` for code writing rules and testing.
+
+  This cell is the development zone: the pipeline-specific autonomy knowledge of the
+  development pipeline and its delivery into a contribution document.
+  The zone entry `development_recipe` is plain data defined in this cell; its values mirror
+  the reference workflow .goga/workflows/development.yml — the reference is authoritative
+  documentation, never read at runtime.
+
+  Use `recipe_guide` from Imports for the entry shape and field semantics.
+  Use `workflow_document` for the platform model this cell constructs and reads.
+  Use `goga_dependency` for acquiring the platform model at runtime — the package declares
+  no runtime goga dependency.
+
+---
+
+"development_recipe() -> entry: AutonomyRecipe":
+  location: entry.py
+  annotations: |
+    The development zone entry — the recipe data of the development pipeline; the single
+    source of every value the zone's delivery contributes.
+
+    `entry`: the development recipe — the gated-stage set, the acceptance stage, and the
+    build extension
+
+    Requirements:
+    - Values mirror the reference workflow .goga/workflows/development.yml verbatim:
+      gated_stages is exactly architecture-review, apply-architecture, code-design,
+      design-review, coding-plan, plan-review; accept_stage is accept-result; build_extend
+      carries title Build implementation, after commit-changes, timeout 8h, the goga build
+      entrypoint invoked with the run's plan artifact, and the after_script cleanup
+    - Pure and deterministic — every call returns an equal entry; the reference file is
+      never read at runtime
+
+    Constraints:
+    - Data only — the entry performs no action beyond construction
+
+"build_development_contribution(recipe: AutonomyRecipe, workflow: WorkflowDocument | None) -> document: WorkflowDocument":
+  location: contribution.py
+  annotations: |
+    Build the development autonomy contribution — the never-empty declarative document the
+    hook delivers for the development pipeline.
+
+    `recipe`: the development recipe entry — the source of every contributed entry
+    `workflow`: the authored workflow after the decision and the runner-skip merge; None when
+    no workflow resolved
+    `document`: the WorkflowDocument-shaped contribution — stage instructions plus the build
+    extension
+
+    Algorithm:
+    1. Place the build extension: put the build extension entry of `recipe` under the fresh
+       extension name build
+    2. Fill the gated stages: for each gated stage of `recipe` — contribute the approve
+       instruction auto when `workflow` is None, the stage has no authored entry, or its
+       authored entry carries no approve instruction; skip a stage whose authored entry
+       already carries one
+    3. Set the acceptance trigger: contribute the manual instruction false for the acceptance
+       stage of `recipe` — always, unchecked
+    4. Assemble the document from the collected stage instructions and the build extension,
+       and return it
+
+    Requirements:
+    - The result is never empty: at minimum the acceptance-stage instruction and the build
+      extension
+    - Deterministic: the same recipe and workflow always produce the identical document
+    - Use `workflow_document` for both the construction and the authored-instruction reads
+
+    Constraints:
+    - Contribute stage instructions and the build extension only — never prompt or memory
+      entries
+    - Do not implement merge or override logic — the platform owns authored-wins semantics
+    - No I/O, no state, no time or environment dependence
+
+---
+
+Author: Goga
+CreatedAt: 01/10/26
+Description: |
+  The development functional domain: the development pipeline's recipe entry (plain data) and
+  its delivery into a WorkflowDocument-shaped contribution.

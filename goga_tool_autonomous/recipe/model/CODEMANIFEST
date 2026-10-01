@@ -1,0 +1,58 @@
+Usages:
+  conventions: .goga/usages/conventions.md
+  workflow_document: .goga/usages/github/goga/pipeline/workflow/parse-workflow.md
+
+Annotations: |
+  Use `conventions` for code writing rules and testing.
+
+  Recipe knowledge is plain data: no behavior, no I/O, no state.
+  The recipe entity deliberately uses plain Python data structures instead of pydantic — the
+  package keeps its runtime dependencies empty; this deviation from `conventions` is accepted
+  for this cell.
+
+  Use `workflow_document` for the extend-entry vocabulary the build_extend data carries.
+
+---
+
+"AutonomyRecipe(pipeline: str, gated_stages: list[str], accept_stage: str, build_extend: dict[str, str | list[str]])":
+  location: recipe.py
+  annotations: |
+    Immutable data recipe for one pipeline's autonomy contribution — the single source of every
+    entry the delivery path contributes for that pipeline.
+
+    `pipeline`: the exact pipeline name the recipe targets; source and display name are ignored
+    `gated_stages`: stages receiving the approve instruction auto when the author left the
+    approval mode unset
+    `accept_stage`: the acceptance stage receiving the unconditional non-manual instruction
+    `build_extend`: the build extension entry as data, in the extend-entry vocabulary of
+    `workflow_document`
+
+    Requirements:
+    - Construction captures all four fields; instances expose them read-only
+
+    Constraints:
+    - A data carrier only — no methods, no computed state, no I/O
+    - Plain data structures only (no pydantic) — the cell-wide deviation from `conventions`
+  properties:
+    "pipeline -> str": |
+      Exact target pipeline name; compared verbatim against the composing pipeline's name —
+      source and display name never participate.
+    "gated_stages -> list[str]": |
+      Stages receiving the approve instruction auto when their authored entry carries no
+      approve instruction; the concrete set is zone knowledge defined by the pipeline's recipe
+      entry.
+    "accept_stage -> str": |
+      The acceptance stage receiving the unconditional non-manual instruction —
+      contributed always, unchecked.
+    "build_extend -> dict[str, str | list[str]]": |
+      The build extension entry as plain data in the extend-entry vocabulary of
+      `workflow_document` (title, after, timeout, script, after_script); the delivery path
+      places it under the fresh extension name build.
+
+---
+
+Author: Goga
+CreatedAt: 01/10/26
+Description: |
+  The generic recipe shape of the autonomy tool: one pipeline's contribution knowledge as
+  plain immutable data.
