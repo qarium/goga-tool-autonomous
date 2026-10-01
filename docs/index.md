@@ -4,10 +4,6 @@ A [goga](https://pypi.org/project/goga/) hook tool that turns `development` pipe
 unattended ones: review gates auto-approve, acceptance stops requiring a manual click, and the
 build stage is contributed automatically.
 
-## Documentation
-
-Full documentation is published at <https://qarium.github.io/goga-tool-autonomous/>.
-
 ## How it works
 
 The package registers exactly one hook — `autonomy` on the `pipeline / amend_workflow` action.
@@ -70,6 +66,12 @@ RUN cd /tmp/project && goga install autonomous && rm -rf /tmp/project
 
 USER goga
 ```
+
+## Documentation
+
+- [Architecture](architecture.md) — the cell map and the amendment data flow
+- [API reference](api/facade.md) — the facade, the recipe zone, the development domain, and the
+  recipe model
 
 ## Development
 
