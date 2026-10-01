@@ -1,5 +1,5 @@
 language: python
-image: qarium/goga-python-3.14:2.0
+image: goga-tool-autonomous:latest
 
 .base-ref: &base-ref 0.0.x
 
@@ -25,6 +25,9 @@ pipeline:
   env:
     <<: *claude-env
     ANTHROPIC_DEFAULT_OPUS_MODEL: "glm-5.3[1m]"
+
+tools:
+  mkdocs: latest
 
 usages:
   github:
