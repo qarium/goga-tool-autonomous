@@ -739,14 +739,15 @@ Verified code stack trace (from the design):
    call so no caller can mutate shared state).
 ```
 
-- [ ] **STEP 0 (DECLARATION)** — declare this is Task 3: implementing `development_recipe` in
+- [x] **STEP 0 (DECLARATION)** — declare this is Task 3: implementing `development_recipe` in
   `goga_tool_autonomous/recipe/development/entry.py` with the re-export on the cell facade
-- [ ] **STEP 1 (CONTRACT TESTS)** — create `tests/recipe/development/test_entry.py` with
+- [x] **STEP 1 (CONTRACT TESTS)** — create `tests/recipe/development/test_entry.py` with
   `class TestDevelopmentRecipeContract:` — import from the cell facade
   (`from goga_tool_autonomous.recipe.development import development_recipe`); assert
   `development_recipe` is in the facade `__all__`; assert via `inspect.signature`: zero
   parameters, return annotation `AutonomyRecipe`. Run the file — failure is expected at this stage
-- [ ] **STEP 2 (IMPLEMENTATION — REPL cycle)** — open `/opt/goga/project/bin/python -i`; first pin the
+  (observed: ImportError, as designed)
+- [x] **STEP 2 (IMPLEMENTATION — REPL cycle)** — open `/opt/goga/project/bin/python -i`; first pin the
   expectations against the real reference: `parse_workflow` the repo
   `.goga/workflows/development.yml`, list the stages whose entry carries `approve == "auto"`,
   read `extend["build"]` (after/title/timeout/script/after_script) — these observed values are the
@@ -756,18 +757,20 @@ Verified code stack trace (from the design):
   add the re-export to `goga_tool_autonomous/recipe/development/__init__.py`
   (`from .entry import development_recipe`, `__all__ = ["development_recipe"]` — extended in
   Task 4)
-- [ ] **STEP 3 (INTERFACE VERIFICATION)** — run
+- [x] **STEP 3 (INTERFACE VERIFICATION)** — run
   `/opt/goga/project/bin/python -m pytest tests/recipe/development/test_entry.py -v` — all contract
-  tests pass
-- [ ] **STEP 4 (LOGIC TESTS)** — add the two behavioral scenarios below (the mirroring test uses
+  tests pass (2 passed)
+- [x] **STEP 4 (LOGIC TESTS)** — add the two behavioral scenarios below (the mirroring test uses
   the shared `reference_workflow` fixture from `tests/conftest.py`)
-- [ ] **STEP 5 (DEBUGGING)** — `/opt/goga/project/bin/python -m pytest tests/ -x`; reproduce any
-  failure in the REPL, fix implementation (never tests), hot-reload, re-run
-- [ ] **STEP 6 (CONTRACT RE-VERIFICATION)** — facade + API shape + behavior;
+- [x] **STEP 5 (DEBUGGING)** — `/opt/goga/project/bin/python -m pytest tests/ -x`; reproduce any
+  failure in the REPL, fix implementation (never tests), hot-reload, re-run (11 passed, nothing
+  to debug)
+- [x] **STEP 6 (CONTRACT RE-VERIFICATION)** — facade + API shape + behavior;
   `/opt/goga/project/bin/python -c "from goga_tool_autonomous.recipe.development import
   development_recipe"` exits 0; the routine performs no action beyond construction
-- [ ] **STEP 7 (LINT)** — `ruff check` + `ruff format` over `goga_tool_autonomous/ tests/` — clean
-- [ ] **STEP 8 (COMPLETION)** — mark checkboxes; run the M3 local-commit gate before any commit
+- [x] **STEP 7 (LINT)** — `ruff check` + `ruff format` over `goga_tool_autonomous/ tests/` — clean
+  (one E501 in the test fixed by extracting the comprehension into a local)
+- [x] **STEP 8 (COMPLETION)** — mark checkboxes; run the M3 local-commit gate before any commit
 
 Logic test scenarios (verbatim from the design):
 
