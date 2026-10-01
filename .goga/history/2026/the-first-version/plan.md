@@ -878,15 +878,16 @@ Verified code stack trace checkpoints (from the design — each must hold in the
   → the hard action turns it into a clean command error; in practice the recipe is defined
   in-code, so the path is unreachable.
 
-- [ ] **STEP 0 (DECLARATION)** — declare this is Task 4: implementing
+- [x] **STEP 0 (DECLARATION)** — declare this is Task 4: implementing
   `build_development_contribution` in `goga_tool_autonomous/recipe/development/contribution.py`
-- [ ] **STEP 1 (CONTRACT TESTS)** — create `tests/recipe/development/test_contribution.py` with
+- [x] **STEP 1 (CONTRACT TESTS)** — create `tests/recipe/development/test_contribution.py` with
   `class TestBuildDevelopmentContributionContract:` — import from the cell facade
   (`from goga_tool_autonomous.recipe.development import build_development_contribution`); assert
   it is in the facade `__all__`; assert via `inspect.signature`: parameters `recipe` (annotation
   `AutonomyRecipe`) and `workflow` (annotation `WorkflowDocument | None`), return annotation
-  `WorkflowDocument`. Run the file — failure is expected at this stage
-- [ ] **STEP 2 (IMPLEMENTATION — REPL cycle)** — open `/opt/goga/project/bin/python -i`; evaluate each
+  `WorkflowDocument`. Run the file — failure is expected at this stage (observed: ImportError,
+  as designed)
+- [x] **STEP 2 (IMPLEMENTATION — REPL cycle)** — open `/opt/goga/project/bin/python -i`; evaluate each
   algorithm step against the real platform models before writing the file: construct
   `WorkflowExtendStage(after=["commit-changes"], body={...})` and inspect its fields; construct
   `WorkflowStage(approve="auto")` / `WorkflowStage(manual=False)` and inspect; build a
@@ -896,21 +897,24 @@ Verified code stack trace checkpoints (from the design — each must hold in the
   same expressions. Migrate the REPL-verified form into `contribution.py` (runtime platform import
   at the top; Google-style docstring with `Args`/`Returns`; blank-line block separation per M1);
   add the re-export to `goga_tool_autonomous/recipe/development/__init__.py`
-  (`__all__ = ["development_recipe", "build_development_contribution"]`)
-- [ ] **STEP 3 (INTERFACE VERIFICATION)** — run
+  (`__all__ = ["development_recipe", "build_development_contribution"]` — applied in ruff's RUF022
+  sorted order `["build_development_contribution", "development_recipe"]`; same names, sorted
+  `__all__`)
+- [x] **STEP 3 (INTERFACE VERIFICATION)** — run
   `/opt/goga/project/bin/python -m pytest tests/recipe/development/test_contribution.py -v` — all
-  contract tests pass
-- [ ] **STEP 4 (LOGIC TESTS)** — add the seven behavioral scenarios below (positive, negative,
+  contract tests pass (2 passed)
+- [x] **STEP 4 (LOGIC TESTS)** — add the seven behavioral scenarios below (positive, negative,
   edge)
-- [ ] **STEP 5 (DEBUGGING)** — `/opt/goga/project/bin/python -m pytest tests/ -x`; reproduce any
+- [x] **STEP 5 (DEBUGGING)** — `/opt/goga/project/bin/python -m pytest tests/ -x`; reproduce any
   failure in the REPL (same interpreter session pattern), fix implementation (never tests),
-  hot-reload, re-run
-- [ ] **STEP 6 (CONTRACT RE-VERIFICATION)** — facade + API shape + behavior; the algorithm's four
+  hot-reload, re-run (20 passed, nothing to debug; the missing-`after` KeyError path verified in
+  the REPL as designed)
+- [x] **STEP 6 (CONTRACT RE-VERIFICATION)** — facade + API shape + behavior; the algorithm's four
   steps and all checkpoints above hold; no merge/override logic was implemented; no prompt/memory
   entries are contributed
-- [ ] **STEP 7 (LINT)** — `ruff check` + `ruff format` — clean; decompose if the loop + branches
+- [x] **STEP 7 (LINT)** — `ruff check` + `ruff format` — clean; decompose if the loop + branches
   approach the complexity threshold (max 10)
-- [ ] **STEP 8 (COMPLETION)** — mark checkboxes; run the M3 local-commit gate before any commit
+- [x] **STEP 8 (COMPLETION)** — mark checkboxes; run the M3 local-commit gate before any commit
 
 Logic test scenarios (verbatim from the design — implement exactly):
 
