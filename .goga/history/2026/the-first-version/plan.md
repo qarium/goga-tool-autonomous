@@ -615,10 +615,10 @@ Edge cases the carrier tolerates (do not add validation for them): duplicate nam
 `gated_stages`, or a `gated_stages` entry equal to `accept_stage` — the delivery collapses
 duplicates in the stages map and an overlap contributes both instructions for that name.
 
-- [ ] **STEP 0 (DECLARATION)** — declare this is Task 2: implementing `AutonomyRecipe` in
+- [x] **STEP 0 (DECLARATION)** — declare this is Task 2: implementing `AutonomyRecipe` in
   `goga_tool_autonomous/recipe/model/recipe.py` with the facade re-export in
   `goga_tool_autonomous/recipe/model/__init__.py`
-- [ ] **STEP 1 (CONTRACT TESTS)** — create `tests/recipe/model/test_recipe.py` with
+- [x] **STEP 1 (CONTRACT TESTS)** — create `tests/recipe/model/test_recipe.py` with
   `class TestAutonomyRecipeContract:` — import from the cell facade
   (`from goga_tool_autonomous.recipe.model import AutonomyRecipe`); assert `AutonomyRecipe` is in
   the facade `__all__`; assert the constructor signature via `inspect.signature`: exactly four
@@ -627,7 +627,7 @@ duplicates in the stages map and an overlap contributes both instructions for th
   readable on a constructed instance. Run
   `/opt/goga/project/bin/python -m pytest tests/recipe/model/test_recipe.py -v` — failure at this stage
   is expected (the entity does not exist yet)
-- [ ] **STEP 2 (IMPLEMENTATION — REPL cycle)** — open `/opt/goga/project/bin/python -i`; evaluate the
+- [x] **STEP 2 (IMPLEMENTATION — REPL cycle)** — open `/opt/goga/project/bin/python -i`; evaluate the
   designed form interactively: construct with the four keyword arguments; verify property reads
   return each value verbatim; verify `dataclasses.FrozenInstanceError` on field assignment;
   verify equality semantics of equal instances. After each edit of
@@ -637,21 +637,21 @@ duplicates in the stages map and an overlap contributes both instructions for th
   and the plain-data deviation; add the facade re-export to
   `goga_tool_autonomous/recipe/model/__init__.py`: `from .recipe import AutonomyRecipe` with
   `__all__ = ["AutonomyRecipe"]` and a Google-style module docstring
-- [ ] **STEP 3 (INTERFACE VERIFICATION)** — run
+- [x] **STEP 3 (INTERFACE VERIFICATION)** — run
   `/opt/goga/project/bin/python -m pytest tests/recipe/model/test_recipe.py -v` — all contract tests
   pass
-- [ ] **STEP 4 (LOGIC TESTS)** — add the three behavioral scenarios below to
+- [x] **STEP 4 (LOGIC TESTS)** — add the three behavioral scenarios below to
   `tests/recipe/model/test_recipe.py` (positive + edge; names per M2)
-- [ ] **STEP 5 (DEBUGGING)** — run `/opt/goga/project/bin/python -m pytest tests/ -x`; for any failure,
+- [x] **STEP 5 (DEBUGGING)** — run `/opt/goga/project/bin/python -m pytest tests/ -x`; for any failure,
   reproduce it in the REPL, fix the implementation code (never the test code), hot-reload,
   re-run — until all tests pass
-- [ ] **STEP 6 (CONTRACT RE-VERIFICATION)** — facade, API shape, and behavior still match the
+- [x] **STEP 6 (CONTRACT RE-VERIFICATION)** — facade, API shape, and behavior still match the
   contract: `/opt/goga/project/bin/python -c "from goga_tool_autonomous.recipe.model import
   AutonomyRecipe"` exits 0; the four properties are read-only; no methods were added
-- [ ] **STEP 7 (LINT)** — `/opt/goga/project/bin/ruff check goga_tool_autonomous/ tests/` (exit 0) and
+- [x] **STEP 7 (LINT)** — `/opt/goga/project/bin/ruff check goga_tool_autonomous/ tests/` (exit 0) and
   `/opt/goga/project/bin/ruff format goga_tool_autonomous/ tests/`; decompose if complexity or style
   requires it
-- [ ] **STEP 8 (COMPLETION)** — mark the checkboxes; run the M3 local-commit gate
+- [x] **STEP 8 (COMPLETION)** — mark the checkboxes; run the M3 local-commit gate
   (facade import → ruff check → ruff format --check → `pytest tests/ -x`) before any commit
 
 Logic test scenarios (verbatim from the design — implement exactly):
