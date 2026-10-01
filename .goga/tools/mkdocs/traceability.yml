@@ -1,0 +1,13 @@
+docs/architecture.md:
+  - goga_tool_autonomous
+  - goga_tool_autonomous/recipe
+  - goga_tool_autonomous/recipe/development
+  - goga_tool_autonomous/recipe/model
+docs/api/facade.md:
+  - goga_tool_autonomous
+docs/api/recipe-zone.md:
+  - goga_tool_autonomous/recipe
+docs/api/development-domain.md:
+  - goga_tool_autonomous/recipe/development
+docs/api/recipe-model.md:
+  - goga_tool_autonomous/recipe/model

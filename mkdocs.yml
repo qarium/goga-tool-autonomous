@@ -32,7 +32,14 @@ theme:
     - search.highlight
     - content.code.copy
 
-nav: []
+nav:
+  - Home: index.md
+  - Architecture: architecture.md
+  - API:
+      - Package facade: api/facade.md
+      - Recipe zone: api/recipe-zone.md
+      - Development domain: api/development-domain.md
+      - Recipe model: api/recipe-model.md
 
 plugins:
   - search
