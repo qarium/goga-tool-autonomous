@@ -1315,11 +1315,11 @@ acceptance checks carried over from the apply-architecture stage.
 implementation does not match the contract, fix the implementation — never fix the contract. The
 `.usages/` files are equally read-only.**
 
-- [ ] Create `tests/test_integration.py` (directly in `tests/`, per M2) importing from the root
+- [x] Create `tests/test_integration.py` (directly in `tests/`, per M2) importing from the root
   facade (`from goga_tool_autonomous import development_recipe,
   build_development_contribution`) and from the platform (`goga.pipeline.compiler.compile_flow`,
   `goga.pipeline.hooks.overlay.merge_workflow_overlay` and `ToolContribution`)
-- [ ] Implement `test_integration_contribution_only_compiles_unattended` (Scenario A — verbatim
+- [x] Implement `test_integration_contribution_only_compiles_unattended` (Scenario A — verbatim
   from the design):
   - Setup: fixtures `development_pipeline_path`, `tmp_path`;
     `document = build_development_contribution(recipe=development_recipe(), workflow=None)`;
@@ -1346,7 +1346,7 @@ implementation does not match the contract, fix the implementation — never fix
   - Sufficiency: end-to-end proof that the contributed document survives the real platform merge
     and compiler and produces the unattended composition — the tool's whole purpose in one test;
     regresses on any vocabulary drift between the package and a future platform release
-- [ ] Implement `test_integration_authored_reference_wins_byte_identical` (Scenario C — verbatim
+- [x] Implement `test_integration_authored_reference_wins_byte_identical` (Scenario C — verbatim
   from the design):
   - Setup: fixtures `reference_workflow`, `development_pipeline_path`, `tmp_path`;
     `document = build_development_contribution(recipe=development_recipe(),
@@ -1365,12 +1365,12 @@ implementation does not match the contract, fix the implementation — never fix
     ```
   - Sufficiency: the neutrality property — authored intent wins per slot with zero byte drift;
     guards the "do not implement merge or override logic" constraint from the platform side
-- [ ] REPL-verify the expected compiled values before pinning them: drive
+- [x] REPL-verify the expected compiled values before pinning them: drive
   `merge_workflow_overlay` + `compile_flow` in `/opt/goga/project/bin/python -i` once, confirm the
   stage order and the build fields, then migrate the verified expectations into the test (M4)
-- [ ] Run validation: `/opt/goga/project/bin/python -m pytest tests/ -x` — the full suite (20
+- [x] Run validation: `/opt/goga/project/bin/python -m pytest tests/ -x` — the full suite (20
   scenarios) is green
-- [ ] Final acceptance checks (carried over from the apply-architecture stage): facade import
+- [x] Final acceptance checks (carried over from the apply-architecture stage): facade import
   check (`/opt/goga/project/bin/python -c "import goga_tool_autonomous"`); full facade surface check
   (`/opt/goga/project/bin/python -c "from goga_tool_autonomous import register_hooks, autonomy,
   AutonomyRecipe, development_recipe, build_development_contribution"`); zone facade check
@@ -1378,9 +1378,9 @@ implementation does not match the contract, fix the implementation — never fix
   development_recipe, build_development_contribution"`); `test_entry_mirrors_reference_workflow`
   passes; contribution determinism passes; hook silence for non-`development` pipelines passes;
   the `goga>=2.0` test-extra entry is present in `pyproject.toml`
-- [ ] Lint + format: `/opt/goga/project/bin/ruff check goga_tool_autonomous/ tests/` and
+- [x] Lint + format: `/opt/goga/project/bin/ruff check goga_tool_autonomous/ tests/` and
   `/opt/goga/project/bin/ruff format goga_tool_autonomous/ tests/` — clean
-- [ ] Verify the contracts are untouched: `goga lint` still reports `cells: 4 errors: 0`; the
+- [x] Verify the contracts are untouched: `goga lint` still reports `cells: 4 errors: 0`; the
   four CODEMANIFESTs and all `.usages/` files are unmodified (diff against the pre-task state)
 
 ---
@@ -1401,34 +1401,34 @@ implementation does not match the contract, fix the implementation — never fix
 
 ## Completion Criteria
 
-- [ ] Every contract entity is implemented in the correct `location`
+- [x] Every contract entity is implemented in the correct `location`
   (`recipe/model/recipe.py`, `recipe/development/entry.py`, `recipe/development/contribution.py`,
   `registration.py`)
-- [ ] Every contract entity is accessible from the facade (cell facades, the recipe zone facade,
+- [x] Every contract entity is accessible from the facade (cell facades, the recipe zone facade,
   and the package facade — `__all__` per the Python cell rules)
-- [ ] Properties and methods match the declared API (four read-only `AutonomyRecipe` properties;
+- [x] Properties and methods match the declared API (four read-only `AutonomyRecipe` properties;
   the five routine signatures, including `autonomy`'s exactly-`context` parameter)
-- [ ] Descriptions are reflected in behavior (verbatim reference mirroring; never-empty document;
+- [x] Descriptions are reflected in behavior (verbatim reference mirroring; never-empty document;
   inspect-then-fill; unconditional acceptance; registry exact-match silence; single subscription)
-- [ ] Contract dependencies are met (`AutonomyRecipe` imported by the development cell and both
+- [x] Contract dependencies are met (`AutonomyRecipe` imported by the development cell and both
   facades; the platform import confined to `contribution.py`)
-- [ ] Re-exports are accessible from the facade (3 embedded names on two facades)
-- [ ] Every coding task followed the TDD workflow (contract tests → code → verification → logic
+- [x] Re-exports are accessible from the facade (3 embedded names on two facades)
+- [x] Every coding task followed the TDD workflow (contract tests → code → verification → logic
   tests → debugging → re-verification → lint)
-- [ ] Contract tests and logic tests cover facade, API, and behavior within each coding task;
+- [x] Contract tests and logic tests cover facade, API, and behavior within each coding task;
   integration tests exist for the cross-entity scenarios (Task 7)
-- [ ] No package boundary was expanded (no new cells, no new facade-level interfaces, internal
+- [x] No package boundary was expanded (no new cells, no new facade-level interfaces, internal
   decomposition only within the existing cells)
-- [ ] `CODEMANIFEST` files were not modified (contract is read-only); `.usages/` files were not
+- [x] `CODEMANIFEST` files were not modified (contract is read-only); `.usages/` files were not
   modified; `goga lint` reports `cells: 4 errors: 0`
-- [ ] All validation commands pass (tests, lint, format check, all three facade checks)
-- [ ] Every Usages entry is mentioned in at least one task (`conventions`, `workflow_document`,
+- [x] All validation commands pass (tests, lint, format check, all three facade checks)
+- [x] Every Usages entry is mentioned in at least one task (`conventions`, `workflow_document`,
   `hooks_registration`, `pipeline_amendment`, `goga_dependency`; imported: `recipe`/`recipe_guide`,
   `contribution`, `development`)
-- [ ] The Mandatory Rules were enforced across all development stages: M1 coding style (incl. the
+- [x] The Mandatory Rules were enforced across all development stages: M1 coding style (incl. the
   sanctioned pydantic deviation for `AutonomyRecipe` only), M2 test rules (mirrored tree,
   naming, classification, mock policy), M3 linter/formatter gate at every task **and before every
   local commit**, M4 REPL-cycle workflow (continuous interactive evaluation, hot reloading,
   migration of verified code to source files), M5 contract immutability
-- [ ] The venv lives outside the project at `/opt/goga/project`; runtime `dependencies = []` is
+- [x] The venv lives outside the project at `/opt/goga/project`; runtime `dependencies = []` is
   untouched; `goga>=2.0` is present in the `test` extra

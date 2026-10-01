@@ -28,6 +28,7 @@ test = [
     "pytest-mock>=3.10",
     "ruff>=0.15.0",
     "goga>=2.0",
+    "pyyaml>=6.0",
 ]
 docs = [
     "mkdocs>=1.6.0",
