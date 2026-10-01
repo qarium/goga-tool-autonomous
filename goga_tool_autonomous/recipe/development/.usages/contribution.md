@@ -44,7 +44,7 @@ win per slot.
 
 ```python
 # authored approval present on one stage:
-authored.stages["plan-review"]["approve"] = "dialog"
+authored.stages["plan-review"].approve = "dialog"
 
 document = build_development_contribution(recipe=entry, workflow=authored)
 # the document has no approve instruction for plan-review; the other five are present
