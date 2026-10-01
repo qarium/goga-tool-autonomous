@@ -1064,19 +1064,24 @@ contract is exactly the embeddings. Relative imports only (M1); the facade must 
 implementation does not match the contract, fix the implementation — never fix the contract. The
 `.usages/` files are equally read-only.**
 
-- [ ] Implement `goga_tool_autonomous/recipe/__init__.py`: relative imports
+- [x] Implement `goga_tool_autonomous/recipe/__init__.py`: relative imports
   `from .model import AutonomyRecipe` and
   `from .development import development_recipe, build_development_contribution`;
   `__all__ = ["AutonomyRecipe", "development_recipe", "build_development_contribution"]`;
   Google-style module docstring (the recipe zone facade — the single contract surface of the zone)
-- [ ] Verify facade accessibility (per the conventions' facade-check form):
+  — applied in ruff's enforced order (isort-sorted import names, RUF022-sorted `__all__`:
+  `["AutonomyRecipe", "build_development_contribution", "development_recipe"]`, same three names)
+- [x] Verify facade accessibility (per the conventions' facade-check form):
   `/opt/goga/project/bin/python -c "from goga_tool_autonomous.recipe import AutonomyRecipe,
   development_recipe, build_development_contribution"` — exit 0
-- [ ] Verify the whole suite still passes: `/opt/goga/project/bin/python -m pytest tests/ -x`
-- [ ] Verify the root facade import stays clean: `/opt/goga/project/bin/python -c "import
+- [x] Verify the whole suite still passes: `/opt/goga/project/bin/python -m pytest tests/ -x`
+  (20 passed)
+- [x] Verify the root facade import stays clean: `/opt/goga/project/bin/python -c "import
   goga_tool_autonomous"` — exit 0
-- [ ] Lint: `/opt/goga/project/bin/ruff check goga_tool_autonomous/ tests/` and
-  `/opt/goga/project/bin/ruff format goga_tool_autonomous/ tests/` — clean
+- [x] Lint: `/opt/goga/project/bin/ruff check goga_tool_autonomous/ tests/` and
+  `/opt/goga/project/bin/ruff format goga_tool_autonomous/ tests/` — clean (formatter with
+  `--exclude '.usages'` per the M3 adaptation; `--check` confirms 15 files already formatted;
+  `goga lint` still `cells: 4 errors: 0`)
 
 ### Task 6: `register_hooks` and `autonomy` — the package facade (TDD coding)
 
